@@ -1,0 +1,16 @@
+# MoQ Relay (self-hosted for production calls)
+# @see https://github.com/moq-dev/moq
+#
+# Usage:
+#   docker compose -f infra/docker/moq-relay.yml up -d
+#
+# Set MOQ_RELAY_URL=https://your-relay.example.com/anon in .env
+
+services:
+  moq-relay:
+    image: ghcr.io/moq-dev/moq-relay:latest
+    ports:
+      - "4443:4443"
+    environment:
+      - RUST_LOG=info
+    restart: unless-stopped

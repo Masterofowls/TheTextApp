@@ -1,0 +1,19 @@
+{
+  "name": "@thetextapp/moq",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@moq/hang": "^0.2.12",
+    "@moq/net": "^0.1.6"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

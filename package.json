@@ -1,0 +1,27 @@
+{
+  "name": "thetextapp",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:server & npm run dev:mobile",
+    "dev:server": "npm run dev --workspace=@thetextapp/server",
+    "dev:mobile": "npm run start --workspace=mobile",
+    "db:generate": "npm run generate --workspace=@thetextapp/db",
+    "db:migrate": "npm run migrate --workspace=@thetextapp/db",
+    "db:push": "npm run push --workspace=@thetextapp/db",
+    "db:studio": "npm run studio --workspace=@thetextapp/db",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20",
+    "bun": ">=1.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.4"
+  }
+}
