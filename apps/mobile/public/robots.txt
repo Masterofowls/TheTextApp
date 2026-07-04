@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dist-seven-indol-65.vercel.app/sitemap.xml

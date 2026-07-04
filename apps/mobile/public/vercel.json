@@ -1,8 +1,4 @@
 {
-  "buildCommand": "cd apps/mobile && npm run export:web",
-  "outputDirectory": "apps/mobile/dist",
-  "installCommand": "npm install",
-  "framework": null,
   "cleanUrls": true,
   "headers": [
     {

@@ -25,6 +25,7 @@ const corsOrigins = [
 function isAllowedOrigin(origin: string): boolean {
   if (corsOrigins.includes(origin)) return true;
   if (origin.startsWith("exp://")) return true;
+  if (/^https:\/\/[\w-]+\.vercel\.app$/.test(origin)) return true;
   if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return true;
   return false;
 }

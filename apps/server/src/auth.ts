@@ -37,7 +37,7 @@ export const auth = betterAuth({
     "http://localhost:9001",
     "thetextapp://",
     "exp://",
-    ...(process.env.TRUSTED_ORIGINS?.split(",") ?? []),
+    ...(process.env.TRUSTED_ORIGINS?.split(",").filter(Boolean) ?? []),
   ],
   plugins: [
     expo(),
