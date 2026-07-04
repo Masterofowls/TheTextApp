@@ -21,6 +21,7 @@ import {
   subscribeToMessages,
   unsubscribeChannel,
 } from "@/lib/supabase";
+import { navigatePush } from "@/lib/navigation";
 import Colors from "@/constants/Colors";
 
 export default function ChatScreen() {
@@ -64,7 +65,7 @@ export default function ChatScreen() {
   });
 
   const startCall = trpc.calls.start.useMutation({
-    onSuccess: (call) => router.push(`/call/${call.id}`),
+    onSuccess: (call) => navigatePush(router, `/call/${call.id}`),
   });
 
   useEffect(() => {

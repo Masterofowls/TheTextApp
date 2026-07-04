@@ -56,10 +56,11 @@
       "typedRoutes": false
     },
     "extra": {
-      "apiUrl": "http://localhost:9001",
+      "apiUrl": "https://thetextapp-api.fly.dev",
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "ac54cda5-22c9-4b47-a28b-1754fb83b3a4"
       }
-    }
+    },
+    "owner": "froggytalents"
   }
 }

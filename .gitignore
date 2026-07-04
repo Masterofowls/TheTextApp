@@ -18,6 +18,8 @@ Thumbs.db
 *.mobileprovision
 *.orig.*
 web-build/
+apps/mobile/android/
+apps/mobile/ios/
 .turbo/
 drizzle/meta/
 /node_modules

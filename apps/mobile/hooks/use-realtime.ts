@@ -12,6 +12,7 @@ import {
 } from "@/lib/notifications";
 import { shouldShowMessageNotification } from "@/lib/web-notifications";
 import { realtimeSocket } from "@/lib/realtime-ws";
+import { navigatePush } from "@/lib/navigation";
 import { trpc } from "@/lib/trpc";
 import { trpcVanilla } from "@/lib/trpc-vanilla";
 
@@ -48,12 +49,12 @@ export function useRealtime(enabled: boolean) {
       if (cancelled) return;
 
       detachNotifications = attachNotificationResponseHandlers({
-        openChat: (conversationId) => router.push(`/chat/${conversationId}`),
+        openChat: (conversationId) => navigatePush(router, `/chat/${conversationId}`),
         openCall: (callId, answer) => {
           if (answer) {
             void trpcVanilla.calls.answer.mutate({ callId }).catch(console.error);
           }
-          router.push(`/call/${callId}`);
+          navigatePush(router, `/call/${callId}`);
         },
       });
 

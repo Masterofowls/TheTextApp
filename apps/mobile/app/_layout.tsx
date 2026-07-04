@@ -5,6 +5,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
+import { blurActiveElement, navigateReplace } from "@/lib/navigation";
 import { useSession } from "@/lib/auth-client";
 import { TrpcProvider } from "@/lib/providers";
 import { RealtimeBridge } from "@/components/RealtimeBridge";
@@ -30,9 +31,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     const inAuth = segments[0] === "(auth)";
 
     if (!session && !inAuth) {
-      router.replace("/(auth)/sign-in");
+      navigateReplace(router, "/(auth)/sign-in");
     } else if (session && inAuth) {
-      router.replace("/(tabs)");
+      navigateReplace(router, "/(tabs)");
     }
   }, [session, isPending, segments, router]);
 

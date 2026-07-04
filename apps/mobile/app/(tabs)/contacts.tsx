@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FlatList } from "react-native";
 import { useRouter } from "expo-router";
+import { navigatePush } from "@/lib/navigation";
 import { trpc } from "@/lib/trpc";
 import { formatUserHandle } from "@/lib/auth-username";
 import { Box } from "@/components/ui/box";
@@ -18,7 +19,7 @@ export default function ContactsScreen() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const createDirect = trpc.conversation.createDirect.useMutation({
-    onSuccess: (conv) => router.push(`/chat/${conv.id}`),
+    onSuccess: (conv) => navigatePush(router, `/chat/${conv.id}`),
   });
 
   const { data: results, isFetching } = trpc.user.search.useQuery(

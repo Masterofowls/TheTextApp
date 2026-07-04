@@ -1,0 +1,15 @@
+# Fly.io MoQ relay — listens on 443 inside the VM
+
+[log]
+level = "info"
+
+[server]
+listen = "[::]:443"
+tls.generate = ["thetextapp-moq.fly.dev", "localhost"]
+
+[web.http]
+listen = "[::]:443"
+
+[auth.public]
+subscribe = ["anon", "demo"]
+publish = ["anon", "demo/viewer"]

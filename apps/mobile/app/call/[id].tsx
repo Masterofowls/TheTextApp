@@ -16,9 +16,10 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { MoqCallClient, isRelayReachableError, relaySetupHint } from "@thetextapp/moq";
+import { MoqCallClient, isRelayReachableError, probeRelayReachable, relaySetupHint } from "@thetextapp/moq";
 import { trpc } from "@/lib/trpc";
 import { useSession } from "@/lib/auth-client";
+import { blurActiveElement, navigateBack } from "@/lib/navigation";
 
 export default function CallScreen() {
   const { id: callId } = useLocalSearchParams<{ id: string }>();
@@ -26,6 +27,7 @@ export default function CallScreen() {
   const { data: session } = useSession();
   const moqRef = useRef<MoqCallClient | null>(null);
   const [callState, setCallState] = useState<string>("connecting");
+  const [relayDown, setRelayDown] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const pulse = useSharedValue(1);
@@ -42,8 +44,12 @@ export default function CallScreen() {
 
   const answerCall = trpc.calls.answer.useMutation();
   const endCall = trpc.calls.end.useMutation({
-    onSuccess: () => router.back(),
+    onSuccess: () => navigateBack(router),
   });
+
+  useEffect(() => {
+    blurActiveElement();
+  }, []);
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
@@ -58,7 +64,11 @@ export default function CallScreen() {
 
     const client = new MoqCallClient({
       onStateChange: setCallState,
-      onError: (err) => Alert.alert("Call error", err.message),
+      onError: (err) => {
+        if (!relayDown) {
+          Alert.alert("Call error", err.message);
+        }
+      },
     });
     moqRef.current = client;
 
@@ -66,6 +76,13 @@ export default function CallScreen() {
 
     async function connect() {
       try {
+        const relayOk = await probeRelayReachable(moqConfig!.relayUrl);
+        if (!relayOk) {
+          setRelayDown(true);
+          setCallState("relay_unavailable");
+          return;
+        }
+
         if (!isInitiator) {
           await answerCall.mutateAsync({ callId: callId! });
         }
@@ -90,8 +107,10 @@ export default function CallScreen() {
               ? `${err.message}\n\n${relaySetupHint()}`
               : err.message
             : "MoQ connection failed";
-        console.error("MoQ connection failed:", err);
-        Alert.alert("Call connection failed", message);
+        console.warn("[call] MoQ connection failed:", err);
+        if (!relayDown) {
+          Alert.alert("Call connection failed", message);
+        }
       }
     }
 
@@ -126,8 +145,14 @@ export default function CallScreen() {
             <Animated.View style={[styles.avatarPulse, pulseStyle]}>
               <Ionicons name="person" size={64} color="#94a3b8" />
             </Animated.View>
-            <Text style={styles.statusText}>{callState}</Text>
-            <Text style={styles.moqLabel}>MoQ / WebTransport</Text>
+            <Text style={styles.statusText}>
+              {relayDown ? "MoQ relay offline" : callState}
+            </Text>
+            {relayDown ? (
+              <Text style={styles.hint}>{relaySetupHint()}</Text>
+            ) : (
+              <Text style={styles.moqLabel}>MoQ / WebTransport</Text>
+            )}
           </View>
         ) : (
           <View style={styles.nativeFallback}>

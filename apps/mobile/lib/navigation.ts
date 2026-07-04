@@ -21,3 +21,8 @@ export function navigatePush(router: NavigateRouter, href: string) {
   blurActiveElement();
   router.push(href);
 }
+
+export function navigateBack(router: { back: () => void }) {
+  blurActiveElement();
+  router.back();
+}

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
+import { navigatePush } from "@/lib/navigation";
 import {
   handleWebNotificationAction,
   registerNotificationServiceWorker,
@@ -16,12 +17,12 @@ export function useWebNotificationNavigation() {
     void registerNotificationServiceWorker();
 
     const handlers = {
-      openChat: (conversationId: string) => router.push(`/chat/${conversationId}`),
+      openChat: (conversationId: string) => navigatePush(router, `/chat/${conversationId}`),
       openCall: (callId: string, answer?: boolean) => {
         if (answer) {
           void trpcVanilla.calls.answer.mutate({ callId }).catch(console.error);
         }
-        router.push(`/call/${callId}`);
+        navigatePush(router, `/call/${callId}`);
       },
       declineCall: (callId: string) => {
         void trpcVanilla.calls.decline.mutate({ callId }).catch(console.error);
