@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   calls,
@@ -296,6 +296,15 @@ export const conversationRouter = router({
         .where(eq(conversations.id, conversationId))
         .limit(1);
 
+      ctx.realtime?.publishToUsers([input.userId], {
+        type: "conversation_created",
+        conversationId,
+        conversationType: "direct",
+        title: null,
+        createdBy: ctx.userId,
+        creatorName: ctx.session.user.name,
+      });
+
       return created;
     }),
 
@@ -331,6 +340,16 @@ export const conversationRouter = router({
         .from(conversations)
         .where(eq(conversations.id, conversationId))
         .limit(1);
+
+      const recipients = uniqueMembers.filter((id) => id !== ctx.userId);
+      ctx.realtime?.publishToUsers(recipients, {
+        type: "conversation_created",
+        conversationId,
+        conversationType: "group",
+        title: input.title,
+        createdBy: ctx.userId,
+        creatorName: ctx.session.user.name,
+      });
 
       return created;
     }),
@@ -420,6 +439,7 @@ export const messageRouter = router({
         isEncrypted: z.boolean().default(false),
         type: z.enum(["text", "image", "file", "system"]).default("text"),
         replyToId: z.string().optional(),
+        metadata: z.string().max(8000).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -445,8 +465,19 @@ export const messageRouter = router({
         });
       }
 
-      if (!input.isEncrypted && !input.content?.trim()) {
+      if (!input.isEncrypted && !input.content?.trim() && input.type === "text") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Message content required" });
+      }
+
+      if ((input.type === "image" || input.type === "file") && !input.metadata) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Attachments require metadata",
+        });
+      }
+
+      if (!input.isEncrypted && input.type !== "text" && !input.content?.trim()) {
+        input.content = input.type === "image" ? "📷 Image" : "📎 File";
       }
 
       const messageId = generateId();
@@ -459,6 +490,7 @@ export const messageRouter = router({
         type: input.type,
         content: input.isEncrypted ? "🔒 Encrypted message" : input.content!,
         ciphertext: input.isEncrypted ? input.ciphertext : null,
+        metadata: input.metadata ?? null,
         replyToId: input.replyToId,
         createdAt: now,
       });
@@ -597,6 +629,14 @@ export const callRouter = router({
           )
         );
 
+      ctx.realtime?.publishToUsers([call.initiatorId], {
+        type: "call_answered",
+        callId: call.id,
+        conversationId: call.conversationId,
+        answeredByUserId: ctx.userId,
+        answeredByName: ctx.session.user.name,
+      });
+
       return { success: true, call };
     }),
 
@@ -680,6 +720,39 @@ export const callRouter = router({
       return active ?? null;
     }),
 
+  /** Ringing calls where the current user has not joined yet (missed WS events). */
+  listRinging: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await ctx.db
+      .select({
+        callId: calls.id,
+        conversationId: calls.conversationId,
+        callType: calls.type,
+        initiatorId: calls.initiatorId,
+        initiatorName: user.name,
+      })
+      .from(callParticipants)
+      .innerJoin(calls, eq(callParticipants.callId, calls.id))
+      .innerJoin(user, eq(calls.initiatorId, user.id))
+      .where(
+        and(
+          eq(callParticipants.userId, ctx.userId),
+          eq(calls.status, "ringing"),
+          isNull(callParticipants.joinedAt),
+          ne(calls.initiatorId, ctx.userId)
+        )
+      )
+      .orderBy(desc(calls.createdAt));
+
+    return rows.map((row) => ({
+      type: "incoming_call" as const,
+      callId: row.callId,
+      conversationId: row.conversationId,
+      callType: row.callType,
+      initiatorId: row.initiatorId,
+      initiatorName: row.initiatorName,
+    }));
+  }),
+
   getMoqToken: protectedProcedure
     .input(z.object({ callId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -709,6 +782,19 @@ export const callRouter = router({
 
       if (!call) throw new TRPCError({ code: "NOT_FOUND", message: "Call not found" });
 
+      const participants = await ctx.db
+        .select({ userId: callParticipants.userId })
+        .from(callParticipants)
+        .where(eq(callParticipants.callId, input.callId));
+
+      const peerUserId = participants.find((p) => p.userId !== ctx.userId)?.userId;
+      if (!peerUserId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Call has no remote participant",
+        });
+      }
+
       // MoQ token: signed JWT-like payload for relay auth (production: use @moq/token)
       const payload = {
         sub: ctx.userId,
@@ -720,6 +806,7 @@ export const callRouter = router({
       return {
         relayUrl: resolveMoqRelayUrl(call.moqRelayUrl),
         broadcastName: call.moqBroadcastName,
+        peerUserId,
         token: btoa(JSON.stringify(payload)),
         call,
       };
@@ -727,11 +814,13 @@ export const callRouter = router({
 });
 
 import { cryptoRouter } from "./crypto-router.js";
+import { attachmentRouter } from "./attachment-router.js";
 
 export const appRouter = router({
   user: userRouter,
   conversation: conversationRouter,
   message: messageRouter,
+  attachment: attachmentRouter,
   calls: callRouter,
   crypto: cryptoRouter,
 });

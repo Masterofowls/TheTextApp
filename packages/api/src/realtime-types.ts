@@ -7,6 +7,15 @@ export type RealtimeMessageEvent = {
   senderId: string;
 };
 
+export type RealtimeConversationCreatedEvent = {
+  type: "conversation_created";
+  conversationId: string;
+  conversationType: "direct" | "group";
+  title: string | null;
+  createdBy: string;
+  creatorName: string;
+};
+
 export type RealtimeIncomingCallEvent = {
   type: "incoming_call";
   callId: string;
@@ -22,10 +31,20 @@ export type RealtimeCallEndedEvent = {
   conversationId: string;
 };
 
+export type RealtimeCallAnsweredEvent = {
+  type: "call_answered";
+  callId: string;
+  conversationId: string;
+  answeredByUserId: string;
+  answeredByName: string;
+};
+
 export type RealtimeEvent =
   | RealtimeMessageEvent
+  | RealtimeConversationCreatedEvent
   | RealtimeIncomingCallEvent
-  | RealtimeCallEndedEvent;
+  | RealtimeCallEndedEvent
+  | RealtimeCallAnsweredEvent;
 
 export type RealtimePublisher = {
   publishToUsers: (userIds: string[], event: RealtimeEvent) => void;

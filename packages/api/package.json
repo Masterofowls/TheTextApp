@@ -6,12 +6,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./router": "./src/router.ts",
-    "./realtime-types": "./src/realtime-types.ts"
+    "./realtime-types": "./src/realtime-types.ts",
+    "./attachment-types": "./src/attachment-types.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.2",
+    "@thetextapp/moq": "*",
     "@thetextapp/db": "*",
     "@trpc/server": "^11.4.3",
     "drizzle-orm": "^0.44.2",

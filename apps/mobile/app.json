@@ -25,15 +25,35 @@
         "backgroundColor": "#0f172a"
       },
       "package": "com.thetextapp.mobile",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "abiFilters": ["arm64-v8a", "armeabi-v7a"]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "TheTextApp",
+      "shortName": "TheTextApp",
+      "themeColor": "#0f172a",
+      "backgroundColor": "#0f172a",
+      "display": "standalone",
+      "orientation": "portrait"
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 26,
+            "buildToolsVersion": "36.0.0",
+            "abiFilters": ["arm64-v8a", "armeabi-v7a"]
+          }
+        }
+      ],
+      "./plugins/withAndroidReleaseSigning.js",
       [
         "expo-splash-screen",
         {

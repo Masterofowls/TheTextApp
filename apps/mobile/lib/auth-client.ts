@@ -21,6 +21,10 @@ export const authClient = createAuthClient({
 
 export const { signIn, signUp, signOut, useSession, getSession } = authClient;
 
+export function clearWebSessionStorage() {
+  // Native uses SecureStore via expo client; no cross-origin bearer bridge.
+}
+
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const session = await getSession();
   const headers: Record<string, string> = {};

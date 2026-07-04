@@ -12,6 +12,7 @@ build/
 .DS_Store
 Thumbs.db
 *.jks
+infra/android/*.keystore
 *.p8
 *.p12
 *.key

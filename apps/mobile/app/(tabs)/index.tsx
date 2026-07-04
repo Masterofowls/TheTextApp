@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { FlatList, RefreshControl } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { trpc } from "@/lib/trpc";
 import { navigatePush } from "@/lib/navigation";
@@ -46,6 +46,12 @@ export default function ChatsScreen() {
   } = trpc.conversation.list.useQuery(undefined, {
     refetchInterval: false,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch])
+  );
 
   const onRefresh = useCallback(() => refetch(), [refetch]);
 

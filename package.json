@@ -16,7 +16,9 @@
     "db:studio": "npm run studio --workspace=@thetextapp/db",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1"
+    "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "export:web": "npm run export:web --workspace=mobile",
+    "deploy:web": "npm run export:web && vercel deploy apps/mobile/dist --prod --yes"
   },
   "engines": {
     "node": ">=20",

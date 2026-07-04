@@ -9,6 +9,8 @@ import { blurActiveElement, navigateReplace } from "@/lib/navigation";
 import { useSession } from "@/lib/auth-client";
 import { TrpcProvider } from "@/lib/providers";
 import { RealtimeBridge } from "@/components/RealtimeBridge";
+import { IncomingCallOverlay } from "@/components/IncomingCallOverlay";
+import { WebNotificationBridge } from "@/components/WebNotificationBridge";
 import { WebNotificationPrompt } from "@/components/WebNotificationSetup";
 import { useColorScheme } from "@/components/useColorScheme";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
@@ -70,6 +72,8 @@ export default function RootLayout() {
       <TrpcProvider>
         <AuthGate>
           <RealtimeBridge />
+          <WebNotificationBridge />
+          <IncomingCallOverlay />
           <WebNotificationPrompt />
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
           <Stack screenOptions={{ headerShown: false }}>

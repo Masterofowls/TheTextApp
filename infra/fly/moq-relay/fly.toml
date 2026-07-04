@@ -1,8 +1,5 @@
-# MoQ relay — deploy from repo root:
-#   fly ips allocate-v4 -a thetextapp-moq   # required for UDP/WebTransport
-#   fly deploy --config infra/fly/moq-relay/fly.toml
-#
-# Relay URL for API/mobile: https://thetextapp-moq.fly.dev/anon
+# MoQ relay — deploy: cd infra/fly/moq-relay && fly deploy
+# Relay URL: https://thetextapp-moq.fly.dev/anon (cert via API proxy)
 
 app = "thetextapp-moq"
 primary_region = "lhr"
@@ -18,14 +15,12 @@ kill_timeout = "5s"
 [env]
   RUST_LOG = "info"
 
-# UDP — WebTransport / QUIC
 [[services]]
   protocol = "udp"
   internal_port = 443
   [[services.ports]]
     port = 443
 
-# TCP — TLS/HTTP (certificate endpoint, WebSocket fallback)
 [[services]]
   protocol = "tcp"
   internal_port = 443

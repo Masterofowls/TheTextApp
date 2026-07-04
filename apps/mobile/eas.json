@@ -16,7 +16,8 @@
         "EXPO_PUBLIC_MOQ_RELAY_URL": "https://thetextapp-moq.fly.dev/anon"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
       }
     }
   },

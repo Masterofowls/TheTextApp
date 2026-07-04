@@ -4,14 +4,18 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./relay-url": "./src/relay-url.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@moq/hang": "^0.2.12",
-    "@moq/net": "^0.1.6"
+    "@moq/net": "^0.1.6",
+    "@moq/publish": "^0.2.16",
+    "@moq/watch": "^0.2.18",
+    "@svta/cml-utils": "^1.5.0"
   },
   "devDependencies": {
     "typescript": "~6.0.3"

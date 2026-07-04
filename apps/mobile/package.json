@@ -25,6 +25,8 @@
     "expo": "~57.0.2",
     "expo-better-auth-passkey": "^1.4.3",
     "expo-clipboard": "~57.0.0",
+    "expo-document-picker": "~14.0.0",
+    "expo-image-picker": "~17.0.0",
     "expo-constants": "~57.0.3",
     "expo-crypto": "~15.0.2",
     "expo-device": "~57.0.0",
@@ -55,6 +57,8 @@
     "tailwind-variants": "^0.1.20"
   },
   "devDependencies": {
+    "expo-build-properties": "~0.14.0",
+    "@expo/config-plugins": "~10.0.0",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.0",
@@ -62,10 +66,12 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start --clear",
+    "start": "expo start --dev-client",
+    "start:android": "expo start --dev-client --android",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "export:web": "expo export --platform web",
     "typecheck": "tsc --noEmit"
   },
   "private": true,

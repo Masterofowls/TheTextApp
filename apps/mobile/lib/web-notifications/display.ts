@@ -3,8 +3,11 @@ import { getWebNotificationPrefs } from "./prefs";
 import { getNotificationRegistration, postToServiceWorker } from "./service-worker";
 import { hasWebNotificationPermission } from "./permissions";
 
-const ICON = "/favicon.png";
-const BADGE = "/favicon.png";
+/** Absolute URL — service worker notifications require a fetchable icon on the app origin. */
+function notificationIconUrl(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return new URL("/favicon.png", window.location.origin).href;
+}
 
 type NotificationPayload = {
   kind: string;
@@ -30,11 +33,11 @@ async function showSystemNotification(
 ) {
   if (!hasWebNotificationPermission()) return;
 
+  const icon = notificationIconUrl();
   const reg = await getNotificationRegistration();
   if (reg) {
     await reg.showNotification(title, {
-      icon: ICON,
-      badge: BADGE,
+      ...(icon ? { icon, badge: icon } : {}),
       ...options,
     });
     return;
@@ -43,7 +46,7 @@ async function showSystemNotification(
   if (typeof Notification === "undefined") return;
 
   const notification = new Notification(title, {
-    icon: ICON,
+    ...(icon ? { icon } : {}),
     ...options,
   });
 

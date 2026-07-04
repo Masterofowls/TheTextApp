@@ -17,17 +17,21 @@ import { trpc } from "@/lib/trpc";
 import { useE2E } from "@/lib/use-e2e";
 import { setWebActiveConversation } from "@/lib/web-notifications";
 import {
-  isSupabaseConfigured,
   subscribeToMessages,
   unsubscribeChannel,
 } from "@/lib/supabase";
 import { navigatePush } from "@/lib/navigation";
+import { subscribeConversationMessages } from "@/lib/message-events";
+import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
+import { pickFileAttachment, pickImageAttachment, attachmentMetaToJson } from "@/lib/attachments";
+import { realtimeSocket } from "@/lib/realtime-ws";
 import Colors from "@/constants/Colors";
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [text, setText] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [convKey, setConvKey] = useState<Uint8Array | null>(null);
   const [decrypted, setDecrypted] = useState<Record<string, string>>({});
   const listRef = useRef<FlatList>(null);
@@ -44,6 +48,8 @@ export default function ChatScreen() {
     [conversation]
   );
 
+  const utils = trpc.useUtils();
+
   const {
     data: messagesData,
     isLoading,
@@ -52,17 +58,71 @@ export default function ChatScreen() {
     { conversationId: id!, limit: 50 },
     {
       enabled: !!id,
-      refetchInterval: isSupabaseConfigured() ? false : 3_000,
+      staleTime: 0,
+      refetchInterval: false,
     }
   );
 
   const markRead = trpc.conversation.markRead.useMutation();
   const sendMessage = trpc.message.send.useMutation({
-    onSuccess: () => {
-      setText("");
-      refetch();
+    onMutate: async (input) => {
+      if (!id || !me) return;
+      const preview = input.isEncrypted
+        ? "🔒 Encrypted message"
+        : (input.content?.trim() ?? "");
+      const tempId = `pending-${Date.now()}`;
+      await utils.message.list.cancel({ conversationId: id, limit: 50 });
+      const previous = utils.message.list.getData({ conversationId: id, limit: 50 });
+      utils.message.list.setData({ conversationId: id, limit: 50 }, (old) => ({
+        messages: [
+          ...(old?.messages ?? []),
+          {
+            id: tempId,
+            conversationId: id,
+            senderId: me.id,
+            type: input.type ?? "text",
+            content: preview,
+            ciphertext: input.ciphertext ?? null,
+            metadata: null,
+            replyToId: input.replyToId ?? null,
+            editedAt: null,
+            deletedAt: null,
+            createdAt: new Date(),
+            sender: { name: me.name, image: me.image ?? null },
+          },
+        ],
+        nextCursor: old?.nextCursor,
+      }));
+      return { previous, tempId };
+    },
+    onSuccess: (created, _input, context) => {
+      utils.message.list.setData({ conversationId: id!, limit: 50 }, (old) => {
+        if (!old) return old;
+        const withoutPending = old.messages.filter((m) => m.id !== context?.tempId);
+        if (withoutPending.some((m) => m.id === created.id)) {
+          return { ...old, messages: withoutPending };
+        }
+        return {
+          ...old,
+          messages: [
+            ...withoutPending,
+            {
+              ...created,
+              sender: { name: me?.name ?? "You", image: me?.image ?? null },
+            },
+          ],
+        };
+      });
+      void utils.conversation.list.refetch();
+    },
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        utils.message.list.setData({ conversationId: id!, limit: 50 }, context.previous);
+      }
     },
   });
+
+  const uploadAttachment = trpc.attachment.upload.useMutation();
 
   const startCall = trpc.calls.start.useMutation({
     onSuccess: (call) => navigatePush(router, `/call/${call.id}`),
@@ -99,24 +159,79 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (!id) return;
-    const channel = subscribeToMessages(id, () => refetch());
-    return () => unsubscribeChannel(channel);
+
+    const refreshMessages = () => {
+      void refetch();
+      markRead.mutate({ conversationId: id });
+    };
+
+    const unsubEvents = subscribeConversationMessages(id, refreshMessages);
+    const unsubWs = realtimeSocket.onEvent((event) => {
+      if (event.type === "message" && event.conversationId === id) {
+        refreshMessages();
+      }
+    });
+
+    const channel = subscribeToMessages(id, refreshMessages);
+
+    return () => {
+      unsubEvents();
+      unsubWs();
+      unsubscribeChannel(channel);
+    };
   }, [id, refetch]);
 
   const handleSend = useCallback(async () => {
-    if (!text.trim() || !id) return;
+    if (!text.trim() || !id || !me) return;
+
+    const trimmed = text.trim();
+    setText("");
 
     if (convKey) {
-      const ciphertext = await encrypt(text.trim(), convKey);
+      const ciphertext = await encrypt(trimmed, convKey);
       sendMessage.mutate({
         conversationId: id,
         ciphertext,
         isEncrypted: true,
       });
     } else {
-      sendMessage.mutate({ conversationId: id, content: text.trim() });
+      sendMessage.mutate({ conversationId: id, content: trimmed });
     }
-  }, [text, id, convKey, encrypt, sendMessage]);
+  }, [text, id, me, convKey, encrypt, sendMessage]);
+
+  const sendAttachment = useCallback(
+    async (kind: "image" | "file") => {
+      if (!id || !me || uploading) return;
+      try {
+        setUploading(true);
+        const picked =
+          kind === "image" ? await pickImageAttachment() : await pickFileAttachment();
+        if (!picked) return;
+
+        const { meta } = await uploadAttachment.mutateAsync({
+          conversationId: id,
+          fileName: picked.fileName,
+          mimeType: picked.mimeType,
+          dataBase64: picked.base64,
+          width: picked.width,
+          height: picked.height,
+        });
+
+        sendMessage.mutate({
+          conversationId: id,
+          type: picked.kind,
+          content: kind === "image" ? `📷 ${picked.fileName}` : `📎 ${picked.fileName}`,
+          metadata: attachmentMetaToJson(meta),
+        });
+      } catch (err) {
+        console.error("[chat] attachment error", err);
+        alert(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [id, me, uploading, uploadAttachment, sendMessage]
+  );
 
   const title =
     conversation?.type === "group"
@@ -201,9 +316,11 @@ export default function ChatScreen() {
                 {!isMine && conversation?.type === "group" && (
                   <Text style={styles.senderName}>{item.sender?.name}</Text>
                 )}
-                <Text style={[styles.messageText, isMine && styles.messageTextMine]}>
-                  {display}
-                </Text>
+                <ChatMessageContent
+                  message={{ ...item, conversationId: id! }}
+                  displayText={display}
+                  isMine={isMine}
+                />
                 <Text style={[styles.time, isMine && styles.timeMine]}>
                   {new Date(item.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -216,6 +333,22 @@ export default function ChatScreen() {
         />
 
         <View style={styles.inputRow}>
+          <Pressable
+            style={styles.attachBtn}
+            onPress={() => void sendAttachment("image")}
+            disabled={uploading || sendMessage.isPending}
+            accessibilityLabel="Send image"
+          >
+            <Ionicons name="image-outline" size={22} color={Colors.light.tint} />
+          </Pressable>
+          <Pressable
+            style={styles.attachBtn}
+            onPress={() => void sendAttachment("file")}
+            disabled={uploading || sendMessage.isPending}
+            accessibilityLabel="Send file"
+          >
+            <Ionicons name="attach" size={22} color={Colors.light.tint} />
+          </Pressable>
           <TextInput
             style={styles.input}
             placeholder={convKey ? "Encrypted message..." : "Message..."}
@@ -225,11 +358,15 @@ export default function ChatScreen() {
             maxLength={10000}
           />
           <Pressable
-            style={[styles.sendBtn, !text.trim() && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, (!text.trim() || uploading) && styles.sendBtnDisabled]}
             onPress={handleSend}
-            disabled={!text.trim() || sendMessage.isPending}
+            disabled={!text.trim() || sendMessage.isPending || uploading}
           >
-            <Ionicons name="send" size={20} color="#fff" />
+            {uploading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="send" size={20} color="#fff" />
+            )}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -284,6 +421,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#cbd5e1",
     gap: 8,
   },
+  attachBtn: { padding: 8, justifyContent: "center", alignItems: "center" },
   input: {
     flex: 1,
     maxHeight: 120,

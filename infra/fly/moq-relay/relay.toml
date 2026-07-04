@@ -1,4 +1,4 @@
-# Fly.io MoQ relay — listens on 443 inside the VM
+# Fly.io MoQ relay — QUIC + plain HTTP cert on TCP/443
 
 [log]
 level = "info"

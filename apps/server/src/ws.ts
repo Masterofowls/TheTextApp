@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { auth } from "./auth.js";
+import { getSessionFromRequest } from "./session-from-request.js";
 import { realtimeHub } from "./realtime-hub.js";
 
 export type WsData = {
@@ -8,9 +8,11 @@ export type WsData = {
 
 export async function authenticateWsToken(token: string | null): Promise<string | null> {
   if (!token) return null;
-  const session = await auth.api.getSession({
-    headers: new Headers({ Authorization: `Bearer ${token}` }),
-  });
+  const session = await getSessionFromRequest(
+    new Request("http://localhost/ws", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  );
   return session?.user?.id ?? null;
 }
 

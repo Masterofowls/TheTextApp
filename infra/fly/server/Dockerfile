@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 COPY apps/server/package.json ./apps/server/
 COPY packages/api/package.json ./packages/api/
 COPY packages/db/package.json ./packages/db/
+COPY packages/moq/package.json ./packages/moq/
 
 RUN mkdir -p apps/mobile && printf '%s\n' '{"name":"mobile","version":"1.0.0","private":true}' > apps/mobile/package.json
 
@@ -22,6 +23,7 @@ COPY package.json ./
 COPY apps/server ./apps/server
 COPY packages/api ./packages/api
 COPY packages/db ./packages/db
+COPY packages/moq ./packages/moq
 
 WORKDIR /app/apps/server
 EXPOSE 8080

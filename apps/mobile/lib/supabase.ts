@@ -39,6 +39,30 @@ export function subscribeToMessages(
   return channel;
 }
 
+/** Notify when the current user is added to a new conversation (first-message / new-chat fallback). */
+export function subscribeToNewConversations(
+  userId: string,
+  onChange: () => void
+): RealtimeChannel | null {
+  if (!supabase) return null;
+
+  const channel = supabase
+    .channel(`conv-members:${userId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "conversation_members",
+        filter: `user_id=eq.${userId}`,
+      },
+      () => onChange()
+    )
+    .subscribe();
+
+  return channel;
+}
+
 export function unsubscribeChannel(channel: RealtimeChannel | null) {
   if (channel && supabase) {
     supabase.removeChannel(channel);
