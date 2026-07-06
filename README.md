@@ -142,7 +142,26 @@ npm run deploy:web
 
 ### Android APK (GitHub Actions)
 
-Every push to `main` builds a signed release APK via `.github/workflows/android-apk.yml`. Download the artifact from the workflow run, or tag `v*` to publish a GitHub Release with the APK attached.
+`.github/workflows/android-apk.yml` builds a signed release APK and **publishes it to GitHub Releases**:
+
+| Trigger | Release tag | Notes |
+|---------|-------------|-------|
+| Push to `main` | `apk-latest` | Rolling pre-release, updated each build |
+| Push tag `v*` (e.g. `v1.0.0`) | `v1.0.0` | Stable release with generated notes |
+| Manual | `apk-latest` | Actions → **Android — build release APK** → Run workflow |
+
+Download: [github.com/Masterofowls/TheTextApp/releases](https://github.com/Masterofowls/TheTextApp/releases)
+
+**Optional signing secrets** (recommended for production — same key across builds):
+
+| Secret | Description |
+|--------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.keystore` file |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias (default: `thetextapp`) |
+| `ANDROID_KEY_PASSWORD` | Key password |
+
+Without `ANDROID_KEYSTORE_BASE64`, CI generates a new debug-style keystore each run (fine for testing, not for Play Store).
 
 ```bash
 # Local (Linux/macOS)

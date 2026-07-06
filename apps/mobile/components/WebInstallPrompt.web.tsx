@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Linking, Pressable } from "react-native";
-import { ANDROID_APK_RELEASES_URL } from "@/lib/release-links";
+import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/release-links";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
@@ -46,7 +46,7 @@ export function WebInstallPrompt() {
   }, [installEvent]);
 
   const downloadApk = useCallback(() => {
-    void Linking.openURL(ANDROID_APK_RELEASES_URL);
+    void Linking.openURL(ANDROID_APK_DOWNLOAD_URL);
   }, []);
 
   if (installed) return null;
