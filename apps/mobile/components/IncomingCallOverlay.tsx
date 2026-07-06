@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
@@ -73,7 +74,7 @@ export function IncomingCallOverlay() {
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, Platform.OS === "web" ? webBackdropOverlay : null]}>
         <View style={styles.card}>
           <Animated.View style={[styles.avatar, pulseStyle]}>
             <Ionicons name="person" size={48} color="#e2e8f0" />
@@ -120,6 +121,18 @@ export function IncomingCallOverlay() {
   );
 }
 
+const webBackdropOverlay: ViewStyle | null =
+  Platform.OS === "web"
+    ? ({
+        position: "fixed",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        zIndex: 9999,
+      } as unknown as ViewStyle)
+    : null;
+
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
@@ -127,7 +140,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
-    ...(Platform.OS === "web" ? { position: "fixed" as const, inset: 0, zIndex: 9999 } : {}),
   },
   card: {
     width: "100%",

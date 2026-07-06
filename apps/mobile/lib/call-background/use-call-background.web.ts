@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 
+/** Chrome supports `hangup` before it appears in all TypeScript DOM libs. */
+const MEDIA_SESSION_HANGUP = "hangup" as MediaSessionAction;
+
 type Options = {
   active: boolean;
   isVideo: boolean;
@@ -88,7 +91,7 @@ export function useCallBackground({
       });
       navigator.mediaSession.playbackState = "playing";
       try {
-        navigator.mediaSession.setActionHandler("hangup", () => onEndCallRef.current());
+        navigator.mediaSession.setActionHandler(MEDIA_SESSION_HANGUP, () => onEndCallRef.current());
       } catch {
         /* unsupported action */
       }
@@ -124,7 +127,7 @@ export function useCallBackground({
         navigator.mediaSession.metadata = null;
         navigator.mediaSession.playbackState = "none";
         try {
-          navigator.mediaSession.setActionHandler("hangup", null);
+          navigator.mediaSession.setActionHandler(MEDIA_SESSION_HANGUP, null);
         } catch {
           /* ignore */
         }
