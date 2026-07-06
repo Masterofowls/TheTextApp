@@ -17,6 +17,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "build:android:sh": "bash scripts/build-android.sh",
     "export:web": "npm run export:web --workspace=mobile",
     "deploy:web": "npm run export:web && vercel deploy apps/mobile/dist --prod --yes"
   },

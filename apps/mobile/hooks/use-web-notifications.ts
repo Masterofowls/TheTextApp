@@ -5,6 +5,7 @@ import {
   handleWebNotificationAction,
   registerNotificationServiceWorker,
   setWebNotificationRouter,
+  type NotificationPayload,
 } from "@/lib/web-notifications";
 import { setWebDeclineCallHandler } from "@/lib/notifications";
 import { trpcVanilla } from "@/lib/trpc-vanilla";
@@ -27,6 +28,11 @@ export function useWebNotificationNavigation() {
       declineCall: (callId: string) => {
         void trpcVanilla.calls.decline.mutate({ callId }).catch(console.error);
       },
+      quickReply: (conversationId: string, text: string) => {
+        void trpcVanilla.message.send
+          .mutate({ conversationId, content: text, type: "text" })
+          .catch(console.error);
+      },
     };
 
     setWebNotificationRouter(handlers);
@@ -36,10 +42,16 @@ export function useWebNotificationNavigation() {
       const data = event.data as {
         type?: string;
         action?: string;
-        data?: Record<string, string>;
+        data?: NotificationPayload;
+        replyText?: string | null;
       };
       if (data?.type !== "NOTIFICATION_ACTION" || !data.data) return;
-      handleWebNotificationAction(data.action ?? "default", data.data, handlers);
+      handleWebNotificationAction(
+        data.action ?? "default",
+        data.data,
+        handlers,
+        data.replyText
+      );
     };
 
     navigator.serviceWorker?.addEventListener("message", onMessage);

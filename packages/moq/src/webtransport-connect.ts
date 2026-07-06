@@ -45,7 +45,9 @@ export async function createPinnedWebTransport(
     allowPooling: false,
     congestionControl: "low-latency",
     protocols: [...MOQ_ALPN_PROTOCOLS],
-    serverCertificateHashes: [{ algorithm: "sha-256", value: certHashToBytes(certHashHex) }],
+    serverCertificateHashes: [
+      { algorithm: "sha-256", value: certHashToBytes(certHashHex) as BufferSource },
+    ],
   });
 
   transport.closed.catch(() => {});

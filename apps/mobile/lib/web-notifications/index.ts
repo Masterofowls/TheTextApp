@@ -7,6 +7,7 @@ export {
   setWebActiveConversation,
   getWebActiveConversation,
   shouldShowMessageNotification,
+  shouldShowIncomingCallNotification,
   isDocumentVisible,
 } from "./state";
 export {
@@ -26,4 +27,5 @@ export {
   showWebTestNotification,
   setWebNotificationRouter,
   handleWebNotificationAction,
+  type NotificationPayload,
 } from "./display";

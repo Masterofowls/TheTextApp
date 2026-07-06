@@ -24,6 +24,7 @@ import { Center } from "@/components/ui/center";
 import { Divider } from "@/components/ui/divider";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Button, ButtonText } from "@/components/ui/button";
+import { WebInstallPrompt } from "@/components/WebInstallPrompt";
 
 export default function SettingsScreen() {
   useWebNotificationNavigation();
@@ -205,6 +206,7 @@ export default function SettingsScreen() {
       </Card>
 
       <VStack space="xs" className="mt-auto items-center py-6">
+        <WebInstallPrompt />
         <Text size="sm" className="text-muted-foreground">
           TheTextApp v1.0
         </Text>

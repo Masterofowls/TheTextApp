@@ -113,18 +113,64 @@ Set `MOQ_RELAY_URL` in `.env`.
 
 ## Deployment
 
-### Web (Vercel / Netlify)
+### Web (Vercel)
 
-1. Deploy `apps/server` as API (Railway, Render, Fly.io, or Vercel serverless)
-2. Export Expo web: `cd apps/mobile && npx expo export --platform web`
-3. Set `EXPO_PUBLIC_API_URL` to your API URL
-4. Deploy `dist/` folder
+The web app is the Expo static export in `apps/mobile/dist/`, configured via root `vercel.json`.
 
-See `vercel.json` and `netlify.toml` for templates.
+**Automatic deploy (GitHub Actions):** push to `main` after adding these repository secrets at  
+`https://github.com/Masterofowls/TheTextApp/settings/secrets/actions`
 
-### Android APK (EAS Build)
+| Secret | Value |
+|--------|-------|
+| `VERCEL_TOKEN` | Your Vercel token ([create at vercel.com/account/tokens](https://vercel.com/account/tokens)) |
+| `VERCEL_ORG_ID` | `team_CS2oB4kJBlE5xvsuY2vGcoA6` (team id — **not** your personal user id) |
+| `VERCEL_PROJECT_ID` | `prj_TikroBORqVgcVgkjc7djGC2FR69r` |
+
+Optional repository variables for build-time env: `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_MOQ_RELAY_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY`.
+
+**Vercel Git integration:** if the repo is already connected in the Vercel dashboard, Vercel will also deploy on push to `main` using root `vercel.json` — no token required for that path.
+
+**Manual deploy:**
 
 ```bash
+npm run deploy:web
+```
+
+1. Deploy `apps/server` as API (Fly.io — see `infra/fly/README.md`)
+2. Set `EXPO_PUBLIC_API_URL` (and MoQ/Supabase vars) in Vercel project settings
+3. Export + deploy: `npm run deploy:web`
+
+### Android APK (GitHub Actions)
+
+`.github/workflows/android-apk.yml` builds a signed release APK and **publishes it to GitHub Releases**:
+
+| Trigger | Release tag | Notes |
+|---------|-------------|-------|
+| Push to `main` | `apk-latest` | Rolling pre-release, updated each build |
+| Push tag `v*` (e.g. `v1.0.0`) | `v1.0.0` | Stable release with generated notes |
+| Manual | `apk-latest` | Actions → **Android — build release APK** → Run workflow |
+
+Download: [github.com/Masterofowls/TheTextApp/releases](https://github.com/Masterofowls/TheTextApp/releases)
+
+**Optional signing secrets** (recommended for production — same key across builds):
+
+| Secret | Description |
+|--------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded `.keystore` file |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias (default: `thetextapp`) |
+| `ANDROID_KEY_PASSWORD` | Key password |
+
+Without `ANDROID_KEYSTORE_BASE64`, CI generates a new debug-style keystore each run (fine for testing, not for Play Store).
+
+```bash
+# Local (Linux/macOS)
+npm run build:android:sh
+
+# Local (Windows)
+npm run build:android
+
+# EAS cloud
 cd apps/mobile
 npx eas build --platform android --profile preview
 ```

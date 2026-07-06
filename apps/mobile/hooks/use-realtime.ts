@@ -17,7 +17,10 @@ import {
   setIncomingCall,
 } from "@/lib/incoming-call-store";
 import { emitConversationMessage } from "@/lib/message-events";
-import { shouldShowMessageNotification } from "@/lib/web-notifications";
+import {
+  shouldShowIncomingCallNotification,
+  shouldShowMessageNotification,
+} from "@/lib/web-notifications";
 import { realtimeSocket } from "@/lib/realtime-ws";
 import { navigatePush } from "@/lib/navigation";
 import {
@@ -107,7 +110,10 @@ export function useRealtime(enabled: boolean) {
           setIncomingCall(event);
           void utils.calls.getActive.invalidate({ conversationId: event.conversationId });
           void utils.calls.listRinging.invalidate();
-          const showNotify = inBackground;
+          const showNotify =
+            Platform.OS === "web"
+              ? shouldShowIncomingCallNotification()
+              : inBackground;
           if (showNotify) {
             void showIncomingCallNotification(event);
           }
