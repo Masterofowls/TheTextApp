@@ -117,15 +117,18 @@ Set `MOQ_RELAY_URL` in `.env`.
 
 The web app is the Expo static export in `apps/mobile/dist/`, configured via root `vercel.json`.
 
-**Automatic deploy (recommended):** push to `main` — GitHub Actions runs typecheck, exports web, and deploys to Vercel when these repository secrets are set:
+**Automatic deploy (GitHub Actions):** push to `main` after adding these repository secrets at  
+`https://github.com/Masterofowls/TheTextApp/settings/secrets/actions`
 
-| Secret | Description |
-|--------|-------------|
-| `VERCEL_TOKEN` | Vercel personal/team token |
-| `VERCEL_ORG_ID` | Vercel team/user id |
-| `VERCEL_PROJECT_ID` | Linked Vercel project id |
+| Secret | Value |
+|--------|-------|
+| `VERCEL_TOKEN` | Your Vercel token ([create at vercel.com/account/tokens](https://vercel.com/account/tokens)) |
+| `VERCEL_ORG_ID` | `team_CS2oB4kJBlE5xvsuY2vGcoA6` (team id — **not** your personal user id) |
+| `VERCEL_PROJECT_ID` | `prj_TikroBORqVgcVgkjc7djGC2FR69r` |
 
 Optional repository variables for build-time env: `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_MOQ_RELAY_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY`.
+
+**Vercel Git integration:** if the repo is already connected in the Vercel dashboard, Vercel will also deploy on push to `main` using root `vercel.json` — no token required for that path.
 
 **Manual deploy:**
 
