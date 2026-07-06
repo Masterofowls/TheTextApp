@@ -113,18 +113,42 @@ Set `MOQ_RELAY_URL` in `.env`.
 
 ## Deployment
 
-### Web (Vercel / Netlify)
+### Web (Vercel)
 
-1. Deploy `apps/server` as API (Railway, Render, Fly.io, or Vercel serverless)
-2. Export Expo web: `cd apps/mobile && npx expo export --platform web`
-3. Set `EXPO_PUBLIC_API_URL` to your API URL
-4. Deploy `dist/` folder
+The web app is the Expo static export in `apps/mobile/dist/`, configured via root `vercel.json`.
 
-See `vercel.json` and `netlify.toml` for templates.
+**Automatic deploy (recommended):** push to `main` — GitHub Actions runs typecheck, exports web, and deploys to Vercel when these repository secrets are set:
 
-### Android APK (EAS Build)
+| Secret | Description |
+|--------|-------------|
+| `VERCEL_TOKEN` | Vercel personal/team token |
+| `VERCEL_ORG_ID` | Vercel team/user id |
+| `VERCEL_PROJECT_ID` | Linked Vercel project id |
+
+Optional repository variables for build-time env: `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_MOQ_RELAY_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY`.
+
+**Manual deploy:**
 
 ```bash
+npm run deploy:web
+```
+
+1. Deploy `apps/server` as API (Fly.io — see `infra/fly/README.md`)
+2. Set `EXPO_PUBLIC_API_URL` (and MoQ/Supabase vars) in Vercel project settings
+3. Export + deploy: `npm run deploy:web`
+
+### Android APK (GitHub Actions)
+
+Every push to `main` builds a signed release APK via `.github/workflows/android-apk.yml`. Download the artifact from the workflow run, or tag `v*` to publish a GitHub Release with the APK attached.
+
+```bash
+# Local (Linux/macOS)
+npm run build:android:sh
+
+# Local (Windows)
+npm run build:android
+
+# EAS cloud
 cd apps/mobile
 npx eas build --platform android --profile preview
 ```

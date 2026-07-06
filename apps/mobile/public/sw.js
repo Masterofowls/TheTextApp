@@ -58,12 +58,19 @@ function focusOrOpen(path, payload) {
 self.addEventListener("notificationclick", (event) => {
   const data = event.notification.data ?? {};
   const action = event.action || "default";
+  const replyText = event.reply ?? null;
   event.notification.close();
 
-  const payload = { type: "NOTIFICATION_ACTION", action, data };
+  const payload = { type: "NOTIFICATION_ACTION", action, data, replyText };
 
   if (data.kind === "message") {
-    event.waitUntil(focusOrOpen(`/chat/${data.conversationId}`, payload));
+    if (action === "reply" && replyText) {
+      event.waitUntil(focusOrOpen(`/chat/${data.conversationId}`, payload));
+      return;
+    }
+    if (action === "open" || action === "default") {
+      event.waitUntil(focusOrOpen(`/chat/${data.conversationId}`, payload));
+    }
     return;
   }
 

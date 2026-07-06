@@ -19,3 +19,8 @@ export function shouldShowMessageNotification(conversationId: string): boolean {
   }
   return true;
 }
+
+/** Show incoming-call tray notifications when the tab is hidden or unfocused. */
+export function shouldShowIncomingCallNotification(): boolean {
+  return !isDocumentVisible();
+}

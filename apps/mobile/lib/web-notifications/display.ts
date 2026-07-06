@@ -9,7 +9,7 @@ function notificationIconUrl(): string | undefined {
   return new URL("/favicon.png", window.location.origin).href;
 }
 
-type NotificationPayload = {
+export type NotificationPayload = {
   kind: string;
   conversationId?: string;
   messageId?: string;
@@ -27,9 +27,22 @@ export function setWebNotificationRouter(router: typeof clickRouter) {
   clickRouter = router;
 }
 
+type WebNotificationAction = {
+  action: string;
+  title: string;
+  type?: "text";
+  placeholder?: string;
+};
+
+type ExtendedNotificationOptions = NotificationOptions & {
+  renotify?: boolean;
+  actions?: WebNotificationAction[];
+  data: NotificationPayload;
+};
+
 async function showSystemNotification(
   title: string,
-  options: NotificationOptions & { data: NotificationPayload }
+  options: ExtendedNotificationOptions
 ) {
   if (!hasWebNotificationPermission()) return;
 
@@ -69,11 +82,23 @@ export async function showWebMessageNotification(
   const prefs = getWebNotificationPrefs();
   if (!prefs.messages) return;
 
+  const actions: WebNotificationAction[] = [
+    {
+      action: "reply",
+      title: "Reply",
+      // Chrome/Edge: inline reply from the notification tray (parity with Android).
+      type: "text",
+      placeholder: "Message…",
+    },
+    { action: "open", title: "Open" },
+  ];
+
   await showSystemNotification(event.senderName, {
     body: event.preview,
     tag: `msg-${event.conversationId}`,
     renotify: true,
     silent: !prefs.sound,
+    actions,
     data: {
       kind: "message",
       conversationId: event.conversationId,
@@ -127,10 +152,18 @@ export function handleWebNotificationAction(
     openChat: (id: string) => void;
     openCall: (id: string, answer?: boolean) => void;
     declineCall: (id: string) => void;
-  }
+    quickReply?: (conversationId: string, text: string) => void;
+  },
+  replyText?: string | null
 ) {
   if (data.kind === "message" && data.conversationId) {
-    handlers.openChat(data.conversationId);
+    if (action === "reply" && replyText?.trim()) {
+      handlers.quickReply?.(data.conversationId, replyText.trim());
+      return;
+    }
+    if (action === "open" || action === "default") {
+      handlers.openChat(data.conversationId);
+    }
     return;
   }
 
